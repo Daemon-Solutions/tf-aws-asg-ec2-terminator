@@ -31,7 +31,7 @@ module "asg" {
 
   instance_type               = "t3.nano"
   associate_public_ip_address = true
-  min                         = "2"
+  min                         = "1"
   max                         = "5"
 }
 

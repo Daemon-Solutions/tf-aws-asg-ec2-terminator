@@ -3,7 +3,7 @@
 Provides a CloudWatch alarm for given Auto Scaling Groups which monitors maximum CPU usage. Fires a Lambda function to attempt to terminate the offending instances if the maximum CPU threshold is exceed. Also provides a fallback alarm for use with PagerDuty.
 
 ## Notes
-- This module will not terminate any instances if the current in service instance count is at the ASG minumum.
+- This module will not terminate any instances if the current in service instance count is at the ASG minimum.
 - This must be used with ASG's that have auto scaling policies in place. The periods of the ASG alarm can be set in a way that new instances are provisioned before the alarm fires to terminate the bad ones smoothly. Alternatively, you can set these low and use the fallback alarm for PagerDuty.
 - This module does not provision new instances.
 
