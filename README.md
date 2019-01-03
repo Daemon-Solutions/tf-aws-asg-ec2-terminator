@@ -18,10 +18,11 @@ module "terminator" {
 
   auto_scaling_groups = [
     {
-      name               = "${module.asg.asg_name}"
-      threshold          = "90"
-      period             = "60"
-      evaluation_periods = "30"
+      name                = "${module.asg.asg_name}"
+      threshold           = "90"
+      period              = "60"
+      evaluation_periods  = "30"
+      datapoints_to_alarm = "15"
     },
   ]
 }

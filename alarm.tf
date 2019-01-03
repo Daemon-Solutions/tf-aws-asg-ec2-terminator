@@ -8,6 +8,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm_terminator_cpu" {
   period              = "${lookup(var.auto_scaling_groups[count.index], "period")}"
   statistic           = "Maximum"
   threshold           = "${lookup(var.auto_scaling_groups[count.index], "threshold")}"
+  datapoints_to_alarm = "${lookup(var.auto_scaling_groups[count.index], "datapoints_to_alarm")}"
   alarm_description   = "Max CPU alarm for ${lookup(var.auto_scaling_groups[count.index], "name")}"
   alarm_actions       = ["${aws_sns_topic.sns_topic.arn}"]
 
@@ -26,6 +27,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm_terminator_cpu_fallback" {
   period              = "${lookup(var.auto_scaling_groups[count.index], "period")}"
   statistic           = "Maximum"
   threshold           = "${lookup(var.auto_scaling_groups[count.index], "threshold")}"
+  datapoints_to_alarm = "${lookup(var.auto_scaling_groups[count.index], "datapoints_to_alarm")}"
   alarm_description   = "Max CPU alarm for ${lookup(var.auto_scaling_groups[count.index], "name")}"
   alarm_actions       = ["${var.fallback_sns_topic_arn}"]
   ok_actions          = ["${var.fallback_sns_topic_arn}"]
