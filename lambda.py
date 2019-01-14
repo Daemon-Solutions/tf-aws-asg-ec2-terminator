@@ -122,6 +122,9 @@ def check_instances(data):
             if fail_count == alert_data['evaluation_periods']:
                 terminate_instances.append(instance)
 
+        if not terminate_instances:
+            raise Exception('Function invoked, but no instances found to terminate.')
+
         alert_data['instances'] = terminate_instances
 
         # Terminate them if possible
