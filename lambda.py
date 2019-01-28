@@ -23,7 +23,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 FAILURE_COLOUR = os.environ['FAILURE_COLOUR']
-SEND_SLACK = os.environ['SEND_SLACK']
 SLACK_EMOJI = os.environ['SLACK_EMOJI']
 SLACK_SUBJECT = os.environ['SLACK_SUBJECT']
 SLACK_TITLE = os.environ['SLACK_TITLE']
@@ -35,7 +34,7 @@ def lambda_handler(event, context):
     data = json.loads(event['Records'][0]['Sns']['Message'])
     slack_data = check_instances(data)
 
-    if SLACK_URL and slack_data['send_slack'] == True:
+    if SLACK_URL:
         send_slack(slack_data)
 
 def terminate(asg_name, asg_min, asg_instances, terminate_instances):
@@ -63,7 +62,6 @@ def check_instances(data):
 
             alert_data['description'] = data['AlarmDescription']
             alert_data['short_description'] = data['NewStateValue']
-            alert_data['send_slack'] = True
 
             alert_data['alarm_name'] = data['AlarmName']
             alert_data['asg_name'] = data['Trigger']['Dimensions'][0]['value']
@@ -74,9 +72,6 @@ def check_instances(data):
             alert_data['threshold'] = data['Trigger']['Threshold']
             alert_data['region'] = data['Region']
             alert_data['state_change_time'] = data['StateChangeTime']
-
-            if SEND_SLACK == '0':
-                alert_data['send_slack'] = False
 
     except KeyError as e:
         raise Exception('Required key not found: ' + str(e))

@@ -31,7 +31,6 @@ module "terminator" {
 | Name | Description | Type | Default | Required |
 |------|-------------|:----:|:-----:|:-----:|
 | name | The name to use for created resources | string | none | yes |
-| send_slack | Toggle for sending Slack messages | boolean | true | no |
 | slack_url | The Slack webhook URL | string | none | no |
 | fallback_alarm | Toggle for creating a fallback alarm for uses such as PagerDuty | boolean | false | no |
 | fallback_sns_topic_arn | Fallback SNS topic if Terminator cannot resolve the main alarm | string | none | no |
@@ -44,6 +43,4 @@ module "terminator" {
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| sns_topic_arn | ARN of the SNS topic created by this module |
+None

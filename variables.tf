@@ -25,7 +25,7 @@ variable "fallback_sns_topic_arn" {
 
 variable "fallback_additional_evaluation_periods" {
   description = "Additional evaluation periods before firing the fallback alarm"
-  default     = 2
+  default     = 10
 }
 
 variable "auto_scaling_groups" {

@@ -1,7 +1,7 @@
 # Create the Lambda function.
 
 module "lambda" {
-  source = "git::ssh://git@gogs.bashton.net/Bashton-Terraform-Modules/tf-aws-lambda.git"
+  source = "github.com/claranet/terraform-aws-lambda?ref=v0.10.0"
 
   function_name = "${var.name}"
   description   = "Terminator for EC2 instances."
@@ -17,7 +17,6 @@ module "lambda" {
   environment {
     variables = {
       SLACK_TITLE = "${var.name}"
-      SEND_SLACK  = "${var.send_slack}"
       SLACK_URL   = "${var.slack_url}"
       SLACK_EMOJI = "${var.slack_emoji}"
 
