@@ -13,15 +13,21 @@ module "terminator" {
   name      = "terminator-customer-prod"
   slack_url = "https://hooks.slack.com/services/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"
 
-  fallback_alarm         = true
-  fallback_sns_topic_arn = "${aws_sns_topic.pagerduty_fallback.id}"
-
   auto_scaling_groups = [
     {
-      name               = "${module.asg.asg_name}"
+      asg_name           = "${module.asg.asg_name}"
       threshold          = "90"
       period             = "60"
-      evaluation_periods = "30"
+      evaluation_periods = "2"
+    },
+  ]
+
+  fallback_alarms = [
+    {
+      asg_name           = "${module.asg.asg_name}"
+      threshold          = "90"
+      period             = "60"
+      evaluation_periods = "10"
     },
   ]
 }
@@ -32,10 +38,8 @@ module "terminator" {
 |------|-------------|:----:|:-----:|:-----:|
 | name | The name to use for created resources | string | none | yes |
 | slack_url | The Slack webhook URL | string | none | no |
-| fallback_alarm | Toggle for creating a fallback alarm for uses such as PagerDuty | boolean | false | no |
-| fallback_sns_topic_arn | Fallback SNS topic if Terminator cannot resolve the main alarm | string | none | no |
-| fallback_additional_evaluation_periods | Additional evaluation periods before firing the fallback alarm | string | 2 | no |
 | auto_scaling_groups | List of ASG maps to create a CPU alarm for | list | none | yes |
+| fallback_alarms | List of ASG maps to create a fallback CPU alarm for if termination fails | list | none | no |
 | slack_emoji | The Slack emoji to display on messages | string | :terminator: | no |
 | success_colour | Slack termination success colour | string | #36a64f | no |
 | failure_colour | Slack termination failure colour | string | #ff0000 | no |
@@ -43,4 +47,6 @@ module "terminator" {
 
 ## Outputs
 
-None
+| Name | Description |
+|------|-------------|
+| fallback_sns_topic_arn | ARN of the fallback SNS topic created by this module |

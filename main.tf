@@ -51,6 +51,12 @@ resource "aws_sns_topic" "sns_topic" {
   name = "${var.name}"
 }
 
+# Topic for fallback alert messages to be sent to.
+
+resource "aws_sns_topic" "fallback_sns_topic" {
+  name = "${var.name}-fallback"
+}
+
 # Subscribe the Lambda function to the SNS topic.
 
 resource "aws_sns_topic_subscription" "lambda" {
