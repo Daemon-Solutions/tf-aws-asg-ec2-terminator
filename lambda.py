@@ -17,6 +17,7 @@ from urllib.error import URLError, HTTPError
 
 cloudwatch = boto3.client('cloudwatch')
 asg_client = boto3.client('autoscaling')
+sts = boto3.client('sts')
 ec2 = boto3.resource('ec2')
 
 logger = logging.getLogger()
@@ -31,52 +32,15 @@ SUCCESS_COLOUR = os.environ['SUCCESS_COLOUR']
 
 def lambda_handler(event, context):
     logger.info('Event: ' + str(event))
-    data = json.loads(event['Records'][0]['Sns']['Message'])
-    slack_data = check_instances(data)
+    terminated = terminate_instances(event)
 
-    if SLACK_URL:
-        send_slack(slack_data)
+    if SLACK_URL and terminated:
+        send_slack(terminated)
 
-def terminate(asg_name, asg_min, asg_instances, terminate_instances):
-    # Count in service instances
-    asg_in_service_instances = []
+def terminate_instances(data):
+    data['aws_account'] = sts.get_caller_identity()["Account"]
 
-    for i in asg_instances:
-        if i['LifecycleState'] == 'InService':
-            asg_in_service_instances.append(i)
-
-    asg_instance_count = len(asg_in_service_instances)
-
-    # Check in service instances is greater than the asg min before terminating
-    if (asg_instance_count - len(terminate_instances)) >= asg_min:
-        ec2.instances.filter(InstanceIds=terminate_instances).terminate()
-        return True
-    else:
-        return False
-
-def check_instances(data):
-    alert_data = {}
-    try:
-        if 'NewStateValue' in data:
-            new_state_value = data['NewStateValue']
-
-            alert_data['description'] = data['AlarmDescription']
-            alert_data['short_description'] = data['NewStateValue']
-
-            alert_data['alarm_name'] = data['AlarmName']
-            alert_data['asg_name'] = data['Trigger']['Dimensions'][0]['value']
-            alert_data['aws_account'] = data['AWSAccountId']
-            alert_data['evaluation_periods'] = data['Trigger']['EvaluationPeriods']
-            alert_data['new_state_reason'] = data['NewStateReason']
-            alert_data['period'] = data['Trigger']['Period']
-            alert_data['threshold'] = data['Trigger']['Threshold']
-            alert_data['region'] = data['Region']
-            alert_data['state_change_time'] = data['StateChangeTime']
-
-    except KeyError as e:
-        raise Exception('NewStateValue not in alarm data: ' + str(e))
-
-    asg_response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[alert_data['asg_name']])
+    asg_response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[data['asg_name']])
     instance_ids = []
 
     for asg in asg_response['AutoScalingGroups']:
@@ -87,8 +51,8 @@ def check_instances(data):
 
         terminate_instances = []
 
-        # Grab CloudWatch stats for each instance
-        state_change_time = parse(alert_data['state_change_time'])
+        # Get current time
+        current_time = datetime.utcnow()
 
         for instance in instance_ids:
             fail_count = 0
@@ -102,9 +66,9 @@ def check_instances(data):
                         'Value' : instance
                     }
                 ],
-                StartTime=state_change_time - timedelta(seconds=(alert_data['period'] * alert_data['evaluation_periods'])),
-                EndTime=state_change_time,
-                Period=alert_data['period'],
+                StartTime=current_time - timedelta(seconds=(int(data['period']) * int(data['evaluation_periods']))),
+                EndTime=current_time,
+                Period=int(data['period']),
                 Statistics=[
                     'Maximum'
                 ]
@@ -112,36 +76,44 @@ def check_instances(data):
 
             # Search for offending instances
             for value in response['Datapoints']:
-                if value['Maximum'] >= alert_data['threshold']:
+                if value['Maximum'] >= int(data['threshold']):
                     fail_count = fail_count + 1
-            if fail_count == alert_data['evaluation_periods']:
+            if fail_count >= int(data['datapoints_to_alarm']):
                 terminate_instances.append(instance)
 
-        if not terminate_instances:
-            raise Exception('Function invoked, but no instances found to terminate.')
+        if terminate_instances:
+            data['instances'] = terminate_instances
+            asg_in_service_instances = []
 
-        alert_data['instances'] = terminate_instances
+            for i in asg_instances:
+                if i['LifecycleState'] == 'InService':
+                    asg_in_service_instances.append(i)
 
-        # Terminate them if possible
-        if terminate(alert_data['asg_name'], asg_min, asg_instances, terminate_instances):
-            alert_data['terminate_success'] = "True"
-            alert_data['colour'] = SUCCESS_COLOUR
+            asg_instance_count = len(asg_in_service_instances)
+
+            # Check in service instances is greater than the asg min before terminating
+            if (asg_instance_count - len(terminate_instances)) >= asg_min:
+                ec2.instances.filter(InstanceIds=terminate_instances).terminate()
+                data['terminate_success'] = "Terminated"
+                data['colour'] = SUCCESS_COLOUR
+            else:
+                data['terminate_success'] = "Failed to terminate"
+                data['colour'] = FAILURE_COLOUR
+
+            return data
         else:
-            alert_data['terminate_success'] = "False"
-            alert_data['colour'] = FAILURE_COLOUR
-
-    return alert_data
+            print('Function invoked, but no instances found to terminate.')
+            return False
 
 def send_slack(data):
     data = {
         'username': SLACK_SUBJECT,
         'icon_emoji': SLACK_EMOJI,
         "attachments": [{
-            "fallback": data['new_state_reason'],
             "color": data['colour'],
             "author_name": SLACK_TITLE,
-            "title": data['description'],
-            "text": data['new_state_reason'],
+            "title": data['customer'] + ' ' + data['asg_name'] + ' max CPU threshold reached',
+            "text": 'Threshhold of ' + data['threshold'] + '% CPU crossed for: ' + data['datapoints_to_alarm'] + ' datapoints in ' + data['evaluation_periods'],
             "fields": [
                 {
                     "title": "Instances",
@@ -149,12 +121,12 @@ def send_slack(data):
                     "short": "false"
                 },
                 {
-                    "title": "Terminated",
+                    "title": "Status",
                     "value": data['terminate_success'],
                     "short": "false"
                 }
             ],
-            "footer": "Account: " + data['aws_account'] + ", Region: " + data['region'],
+            "footer": "Account: " + data['aws_account'] + ", Customer: " + data['customer'],
             "ts": time.time()
         }]
     }
