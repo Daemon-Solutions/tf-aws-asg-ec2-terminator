@@ -74,16 +74,16 @@ def check_instances(data):
             alert_data['state_change_time'] = data['StateChangeTime']
 
     except KeyError as e:
-        raise Exception('Required key not found: ' + str(e))
+        raise Exception('NewStateValue not in alarm data: ' + str(e))
 
     asg_response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[alert_data['asg_name']])
     instance_ids = []
 
-    for i in asg_response['AutoScalingGroups']:
-        asg_min = i['MinSize']
-        asg_instances = i['Instances']
-        for k in i['Instances']:
-            instance_ids.append(k['InstanceId'])
+    for asg in asg_response['AutoScalingGroups']:
+        asg_min = asg['MinSize']
+        asg_instances = asg['Instances']
+        for instance in asg_instances:
+            instance_ids.append(instance['InstanceId'])
 
         terminate_instances = []
 
@@ -143,11 +143,11 @@ def send_slack(data):
             "title": data['description'],
             "text": data['new_state_reason'],
             "fields": [
-		{
-		    "title": "Instances",
-		    "value": ",".join(data['instances']),
-		    "short": "false"
-		},
+                {
+                    "title": "Instances",
+                    "value": ",".join(data['instances']),
+                    "short": "false"
+                },
                 {
                     "title": "Terminated",
                     "value": data['terminate_success'],
