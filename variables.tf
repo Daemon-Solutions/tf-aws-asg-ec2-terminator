@@ -1,5 +1,10 @@
 variable "name" {
   description = "The name to use for created resources"
+  default     = "tf-aws-asg-ec2-terminator"
+}
+
+variable "customer" {
+  description = "The customer name to use for Slack notifications"
   type        = "string"
 }
 

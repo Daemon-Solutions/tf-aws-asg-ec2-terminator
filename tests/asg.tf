@@ -1,14 +1,16 @@
 module "terminator" {
   source    = "../"
-  name      = "terminator-customer-prod"
   slack_url = "https://hooks.slack.com/services/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"
+  customer  = "samplecustomer"
 
   auto_scaling_groups = [
     {
-      asg_name           = "${module.asg.asg_name}"
-      threshold          = "90"
-      period             = "60"
-      evaluation_periods = "2"
+      asg_name            = "${module.asg.asg_name}"
+      threshold           = "90"
+      period              = "60"
+      evaluation_periods  = "20"
+      datapoints_to_alarm = "15"
+      schedule_expression = "rate(30 minutes)"
     },
   ]
 
@@ -17,14 +19,14 @@ module "terminator" {
       asg_name           = "${module.asg.asg_name}"
       threshold          = "90"
       period             = "60"
-      evaluation_periods = "10"
+      evaluation_periods = "45"
     },
   ]
 }
 
 module "asg" {
   source          = "git::ssh://git@gogs.bashton.net/Bashton-Terraform-Modules/tf-aws-asg.git"
-  name            = "customer-prod-asg"
+  name            = "web-asg"
   envname         = "terminator"
   service         = "terminator"
   ami_id          = "ami-25e7705c"
