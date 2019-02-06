@@ -1,11 +1,11 @@
 variable "name" {
   description = "The name to use for created resources"
-  type        = "string"
+  default     = "tf-aws-asg-ec2-terminator"
 }
 
-variable "send_slack" {
-  description = "Toggle for sending Slack messages"
-  default     = true
+variable "customer" {
+  description = "The customer name to use for Slack notifications"
+  type        = "string"
 }
 
 variable "slack_url" {
@@ -13,23 +13,13 @@ variable "slack_url" {
   default     = ""
 }
 
-variable "fallback_alarm" {
-  description = "Toggle for creating a fallback alarm for uses such as PagerDuty"
-  default     = false
-}
-
-variable "fallback_sns_topic_arn" {
-  description = "Fallback SNS topic if Terminator cannot resolve the main alarm"
-  default     = ""
-}
-
-variable "fallback_additional_evaluation_periods" {
-  description = "Additional evaluation periods before firing the fallback alarm"
-  default     = 2
-}
-
 variable "auto_scaling_groups" {
   description = "List of ASG maps to create a CPU alarm for"
+  default     = []
+}
+
+variable "fallback_alarms" {
+  description = "List of fallback alarm maps to create a CPU alarm for"
   default     = []
 }
 

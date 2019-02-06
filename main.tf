@@ -1,7 +1,7 @@
 # Create the Lambda function.
 
 module "lambda" {
-  source = "git::ssh://git@gogs.bashton.net/Bashton-Terraform-Modules/tf-aws-lambda.git"
+  source = "github.com/claranet/terraform-aws-lambda?ref=v0.10.0"
 
   function_name = "${var.name}"
   description   = "Terminator for EC2 instances."
@@ -17,7 +17,6 @@ module "lambda" {
   environment {
     variables = {
       SLACK_TITLE = "${var.name}"
-      SEND_SLACK  = "${var.send_slack}"
       SLACK_URL   = "${var.slack_url}"
       SLACK_EMOJI = "${var.slack_emoji}"
 
@@ -52,6 +51,12 @@ resource "aws_sns_topic" "sns_topic" {
   name = "${var.name}"
 }
 
+# Topic for fallback alert messages to be sent to.
+
+resource "aws_sns_topic" "fallback_sns_topic" {
+  name = "${var.name}-fallback"
+}
+
 # Subscribe the Lambda function to the SNS topic.
 
 resource "aws_sns_topic_subscription" "lambda" {
@@ -63,9 +68,18 @@ resource "aws_sns_topic_subscription" "lambda" {
 # Add permission for SNS to execute the Lambda function.
 
 resource "aws_lambda_permission" "sns" {
-  statement_id  = "AllowExecutionFromSNS"
+  statement_id  = "${var.name}-AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"
   function_name = "${module.lambda.function_name}"
   principal     = "sns.amazonaws.com"
   source_arn    = "${aws_sns_topic.sns_topic.arn}"
+}
+
+resource "aws_lambda_permission" "events" {
+  count         = "${length(var.auto_scaling_groups)}"
+  statement_id  = "${var.name}-AllowExecutionFromCWEvents-${lookup(var.auto_scaling_groups[count.index], "asg_name")}"
+  action        = "lambda:InvokeFunction"
+  function_name = "${module.lambda.function_name}"
+  principal     = "events.amazonaws.com"
+  source_arn    = "${element(aws_cloudwatch_event_rule.rule_terminator.*.arn, count.index)}"
 }
