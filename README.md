@@ -20,7 +20,7 @@ module "terminator" {
       period              = "60"
       evaluation_periods  = "20"
       datapoints_to_alarm = "15"
-      schedule_expression = "rate(30 minutes)"
+      schedule_expression = "rate(20 minutes)"
     },
   ]
 
