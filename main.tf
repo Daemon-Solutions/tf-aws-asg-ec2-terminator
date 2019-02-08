@@ -7,7 +7,7 @@ module "lambda" {
   description   = "Terminator for EC2 instances."
   handler       = "lambda.lambda_handler"
   runtime       = "python3.6"
-  timeout       = 5
+  timeout       = "${var.timeout}"
 
   source_path = "${path.module}/lambda.py"
 
