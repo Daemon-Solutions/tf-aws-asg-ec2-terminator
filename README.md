@@ -41,6 +41,7 @@ module "terminator" {
 | name | The name to use for created resources | string | none | yes |
 | customer | The customer name to use for Slack notifications | string | none | yes |
 | slack_url | The Slack webhook URL | string | none | no |
+| timeout | Lambda function timeout | string | 60 | no |
 | auto_scaling_groups | List of ASG maps to create a CloudWatch event rule for | list | none | yes |
 | fallback_alarms | List of ASG maps to create a fallback CPU alarm for if termination fails | list | none | no |
 | slack_emoji | The Slack emoji to display on messages | string | :terminator: | no |

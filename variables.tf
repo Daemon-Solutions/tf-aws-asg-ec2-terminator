@@ -13,6 +13,11 @@ variable "slack_url" {
   default     = ""
 }
 
+variable "timeout" {
+  description = "Lambda function timeout"
+  default     = "60"
+}
+
 variable "auto_scaling_groups" {
   description = "List of ASG maps to create a CPU alarm for"
   default     = []
