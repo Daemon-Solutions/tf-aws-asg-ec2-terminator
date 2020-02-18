@@ -5,7 +5,7 @@ variable "name" {
 
 variable "customer" {
   description = "The customer name to use for Slack notifications"
-  type        = "string"
+  type        = string
 }
 
 variable "slack_url" {
@@ -48,3 +48,4 @@ variable "slack_subject" {
   description = "Slack subject (title)"
   default     = "Terminator"
 }
+
