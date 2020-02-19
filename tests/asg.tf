@@ -5,7 +5,7 @@ module "terminator" {
 
   auto_scaling_groups = [
     {
-      asg_name            = "${module.asg.asg_name}"
+      asg_name            = module.asg.asg_name
       threshold           = "90"
       period              = "60"
       evaluation_periods  = "20"
@@ -16,7 +16,7 @@ module "terminator" {
 
   fallback_alarms = [
     {
-      asg_name           = "${module.asg.asg_name}"
+      asg_name           = module.asg.asg_name
       threshold          = "90"
       period             = "60"
       evaluation_periods = "45"
@@ -25,14 +25,14 @@ module "terminator" {
 }
 
 module "asg" {
-  source          = "git::ssh://git@gogs.bashton.net/Bashton-Terraform-Modules/tf-aws-asg.git"
+  source          = "git::ssh://git@gitlab.com/claranet-pcp/terraform/aws/tf-aws-asg.git"
   name            = "web-asg"
   envname         = "terminator"
   service         = "terminator"
   ami_id          = "ami-25e7705c"
-  security_groups = ["${aws_security_group.terminator.id}"]
-  subnets         = "${module.vpc.public_subnets}"
-  user_data       = "${data.template_cloudinit_config.config.rendered}"
+  security_groups = [aws_security_group.terminator.id]
+  subnets         = module.vpc.public_subnets
+  user_data       = data.template_cloudinit_config.config.rendered
 
   instance_type               = "t3.nano"
   associate_public_ip_address = true
@@ -43,7 +43,7 @@ module "asg" {
 resource "aws_security_group" "terminator" {
   name        = "terminator"
   description = "Allow all outbound and inbound SSH traffic"
-  vpc_id      = "${module.vpc.vpc_id}"
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     from_port   = 22
@@ -65,7 +65,7 @@ resource "aws_security_group" "terminator" {
 }
 
 data "template_file" "script" {
-  template = "${file("templates/boot.sh.tpl")}"
+  template = file("templates/boot.sh.tpl")
 }
 
 data "template_cloudinit_config" "config" {
@@ -74,6 +74,7 @@ data "template_cloudinit_config" "config" {
 
   part {
     content_type = "text/x-shellscript"
-    content      = "${data.template_file.script.rendered}"
+    content      = data.template_file.script.rendered
   }
 }
+

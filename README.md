@@ -7,6 +7,15 @@ Provides a CloudWatch event rule for given Auto Scaling Groups which monitors ma
 - This must be used with ASG's that have auto scaling policies in place. The `evaluation_periods` and `datapoints_to_alarm` metrics must not be set too low, or autoscaling will not have added new instances, possibly causing this function to fail to terminate the old ones due to the ASG count being at the minimum.
 - This module does not provision new instances to replace the ones terminated.
 
+## Terraform version compatibility
+
+| Module version | Terraform version |
+|----------------|-------------------|
+| 3.x.x          | 0.12.x            |
+| <= 2.x.x       | 0.11.x            |
+
+## Example usage
+
 ```hcl
 module "terminator" {
   source    = "../"
@@ -15,7 +24,7 @@ module "terminator" {
 
   auto_scaling_groups = [
     {
-      asg_name            = "${module.asg.asg_name}"
+      asg_name            = module.asg.asg_name
       threshold           = "90"
       period              = "60"
       evaluation_periods  = "20"
@@ -26,7 +35,7 @@ module "terminator" {
 
   fallback_alarms = [
     {
-      asg_name           = "${module.asg.asg_name}"
+      asg_name           = module.asg.asg_name
       threshold          = "90"
       period             = "60"
       evaluation_periods = "45"
